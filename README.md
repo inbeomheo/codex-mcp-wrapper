@@ -82,25 +82,36 @@ npm install -g @anthropic-ai/claude-code
 
 설치 후 `claude` 명령으로 실행 확인.
 
-### Step 2: ChatGPT 계정 연결 (Codex MCP 활성화)
+### Step 2: Codex CLI 설치 + 로그인
 
-Claude Code 실행 후:
-
+```bash
+npm install -g @openai/codex
+codex login
 ```
-/login
+
+ChatGPT 계정으로 로그인합니다. ChatGPT Plus 구독이 있으면 API 키 없이 사용 가능합니다.
+
+API 키를 쓰려면:
+
+```bash
+codex login --api-key "your-openai-api-key"
 ```
 
-또는 Settings에서 ChatGPT 계정을 연결합니다. 연결하면 Codex MCP 서버가 자동으로 추가됩니다.
+### Step 3: Codex MCP 서버 등록
 
-연결 확인:
+```bash
+claude mcp add codex -- npx -y codex-mcp-server
+```
+
+등록 확인:
 
 ```bash
 claude mcp list
 ```
 
-목록에 `codex` 또는 `chatgpt` 관련 MCP 서버가 보이면 성공입니다.
+목록에 `codex`가 보이면 성공입니다.
 
-### Step 3: 커맨드 파일 설치
+### Step 4: 커맨드 파일 설치
 
 ```bash
 # 이 레포 클론
@@ -118,7 +129,7 @@ mkdir -p .claude/commands
 cp codex.md .claude/commands/codex.md
 ```
 
-### Step 4: 동작 확인
+### Step 5: 동작 확인
 
 Claude Code에서:
 
