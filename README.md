@@ -2,19 +2,7 @@
 
 Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 커맨드.
 
-별도 MCP 서버 설치 없이, **Claude Code 커맨드 하나로** Codex를 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문에 활용합니다.
-
-## vs codex-mcp-bridge
-
-| 항목 | 이 프로젝트 | codex-mcp-bridge |
-|------|-----------|-----------------|
-| **구조** | Claude Code 커맨드 1개 | 독립 stdio MCP 서버 |
-| **설치** | 파일 1개 복사 | `pip install` + `claude mcp add` |
-| **모델 제어** | 직접 지정 (`gpt-5.3-codex`) | CLI가 자동 선택 |
-| **컨텍스트 유지** | threadId 캐시로 후속 대화 | 매번 새 세션 |
-| **커맨더 자율성** | Claude가 상황 판단해서 유연 대응 | 8개 스킬로 고정 분리 |
-| **실전 교훈** | 63건 버그 수정 경험 내장 | 없음 |
-| **레이어** | MCP 직접 호출 | CLI → MCP (중간 레이어 +1) |
+별도 MCP 서버 설치 없이, **Claude Code 커맨드 파일 하나**로 Codex를 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문에 활용합니다.
 
 ## 주요 기능
 
@@ -36,6 +24,7 @@ Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 �
 - **병렬 실행**: 3개+ 파일은 서브에이전트 병렬 분석 (최대 5개 동시)
 - **파일 소유권**: 에이전트별 배타적 파일 배분으로 충돌 방지
 - **threadId 캐시**: 후속 질문에서 컨텍스트 유지 (토큰 절약)
+- **커맨더 자율성**: 모드를 분리하지 않고 Claude가 상황에 맞게 판단
 
 ### 실전에서 검증된 교훈
 
@@ -49,17 +38,15 @@ Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 �
 
 ## 설치
 
-### 방법 1: 파일 복사 (권장)
+### 전역 설치 (권장)
 
 ```bash
-# Claude Code 커맨드 디렉토리에 복사
 cp codex.md ~/.claude/commands/codex.md
 ```
 
-### 방법 2: 프로젝트별 설치
+### 프로젝트별 설치
 
 ```bash
-# 프로젝트 루트에 복사
 mkdir -p .claude/commands
 cp codex.md .claude/commands/codex.md
 ```
