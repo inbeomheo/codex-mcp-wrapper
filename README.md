@@ -6,7 +6,7 @@ Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 �
 
 ## 왜 MCP 서버가 아니라 커맨드인가
 
-기존 Codex MCP 프로젝트들은 CLI를 MCP 서버로 감싸는 방식입니다. Claude Code에는 이미 Codex MCP가 내장되어 있어서, 중간 레이어를 하나 더 두는 건 불필요합니다.
+기존 Codex MCP 프로젝트들은 Codex CLI를 MCP 서버로 감싸는 방식입니다. Claude Code에 ChatGPT 계정을 연결하면 Codex MCP가 자동으로 추가되기 때문에, 별도 MCP 서버를 설치할 필요가 없습니다.
 
 이 프로젝트는 **커맨드 파일 1개**로 Codex MCP를 직접 호출합니다. 설치할 것도, 실행할 서버도 없습니다.
 
