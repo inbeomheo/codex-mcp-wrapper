@@ -6,9 +6,9 @@ Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 �
 
 ## 왜 MCP 서버가 아니라 커맨드인가
 
-기존 Codex MCP 프로젝트들은 Codex CLI를 MCP 서버로 감싸는 방식입니다. Claude Code에 ChatGPT 계정을 연결하면 Codex MCP가 자동으로 추가되기 때문에, 별도 MCP 서버를 설치할 필요가 없습니다.
+기존 Codex MCP 프로젝트들은 Codex CLI를 MCP 서버로 감싸는 방식입니다. Codex MCP 서버(`codex-mcp-server`)를 등록하면 Claude Code에서 Codex를 호출할 수 있지만, 그것만으로는 최적 활용이 어렵습니다.
 
-이 프로젝트는 **커맨드 파일 1개**로 Codex MCP를 직접 호출합니다. 설치할 것도, 실행할 서버도 없습니다.
+이 프로젝트는 **커맨드 파일 1개**로 Codex MCP를 최적 설정으로 호출합니다. MCP 서버 등록은 필요하지만, 별도 래퍼 서버를 만들거나 복잡한 설정을 할 필요가 없습니다.
 
 ## 다른 프로젝트에 없는 기능
 
@@ -77,6 +77,13 @@ npx tsc --noEmit 2>&1 | grep "error TS" | wc -l  # → 35건 이하면 OK
 ### Step 1: Claude Code 설치
 
 ```bash
+# macOS
+brew install claude-code
+
+# Windows (winget)
+winget install Anthropic.ClaudeCode
+
+# npm (대체 방법)
 npm install -g @anthropic-ai/claude-code
 ```
 
@@ -94,10 +101,18 @@ ChatGPT 계정으로 로그인합니다. ChatGPT Plus 구독이 있으면 API �
 API 키를 쓰려면:
 
 ```bash
-codex login --api-key "your-openai-api-key"
+codex --api-key "your-openai-api-key"
+```
+
+또는 환경 변수로 설정:
+
+```bash
+export OPENAI_API_KEY="your-openai-api-key"
 ```
 
 ### Step 3: Codex MCP 서버 등록
+
+[codex-mcp-server](https://www.npmjs.com/package/codex-mcp-server)는 커뮤니티 패키지입니다:
 
 ```bash
 claude mcp add codex -- npx -y codex-mcp-server
