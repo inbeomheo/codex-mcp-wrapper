@@ -96,14 +96,17 @@ npm install -g @openai/codex
 codex login
 ```
 
-ChatGPT 계정으로 로그인합니다. 로그인 후 Claude Code에서 Codex MCP가 자동으로 사용 가능해집니다.
+ChatGPT 계정으로 로그인합니다.
 
-> Codex MCP가 인식되지 않는 경우, CLI 내장 MCP 서버를 수동 등록:
-> ```bash
-> claude mcp add codex -- codex mcp-server
-> ```
+### Step 3: Codex MCP 서버 등록
 
-### Step 3: 커맨드 파일 설치
+```bash
+claude mcp add codex -- codex mcp-server
+```
+
+Codex CLI에 내장된 MCP 서버를 Claude Code에 등록합니다. 등록 후 Claude Code를 재시작하면 Codex MCP가 활성화됩니다.
+
+### Step 4: 커맨드 파일 설치
 
 ```bash
 # 이 레포 클론
@@ -121,7 +124,7 @@ mkdir -p .claude/commands
 cp codex.md .claude/commands/codex.md
 ```
 
-### Step 4: 동작 확인
+### Step 5: 동작 확인
 
 Claude Code에서:
 
