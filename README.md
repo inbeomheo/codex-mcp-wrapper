@@ -2,7 +2,7 @@
 
 Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 커맨드.
 
-별도 MCP 서버 설치 없이, **Claude Code 커맨드 파일 하나**로 Codex를 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문에 활용합니다.
+Codex MCP 서버 위에 **커맨드 파일 하나**를 얹어, 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문을 최적 설정으로 활용합니다.
 
 ## 왜 MCP 서버가 아니라 커맨드인가
 
@@ -78,7 +78,7 @@ npx tsc --noEmit 2>&1 | grep "error TS" | wc -l  # → 35건 이하면 OK
 
 ```bash
 # macOS
-brew install claude-code
+brew install --cask claude-code
 
 # Windows (winget)
 winget install Anthropic.ClaudeCode
@@ -98,10 +98,10 @@ codex login
 
 ChatGPT 계정으로 로그인합니다. ChatGPT Plus 구독이 있으면 API 키 없이 사용 가능합니다.
 
-API 키를 쓰려면:
+API 키를 쓰려면 (stdin으로 입력, 셸 히스토리에 남지 않음):
 
 ```bash
-codex --api-key "your-openai-api-key"
+echo "your-openai-api-key" | codex login --with-api-key
 ```
 
 또는 환경 변수로 설정:
