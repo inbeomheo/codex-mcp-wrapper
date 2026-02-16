@@ -2,17 +2,17 @@
 
 Claude Code에서 OpenAI Codex MCP를 최적 설정으로 호출하는 범용 커맨드.
 
-Codex MCP 서버 위에 **커맨드 파일 하나**를 얹어, 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문을 최적 설정으로 활용합니다.
+**커맨드 파일 하나**로 Codex를 버그 분석, 코드 리뷰, 리팩토링, 버그 수정, 자유 질문에 활용합니다.
 
 ## 왜 MCP 서버가 아니라 커맨드인가
 
-기존 Codex MCP 프로젝트들은 Codex CLI를 MCP 서버로 감싸는 방식입니다. Codex MCP 서버(`codex-mcp-server`)를 등록하면 Claude Code에서 Codex를 호출할 수 있지만, 그것만으로는 최적 활용이 어렵습니다.
+기존 Codex MCP 프로젝트들은 Codex CLI를 MCP 서버로 감싸는 방식입니다. Claude Code에서 ChatGPT 계정을 연결하면 Codex MCP가 자동으로 추가되기 때문에, 별도 MCP 서버를 설치할 필요가 없습니다.
 
-이 프로젝트는 **커맨드 파일 1개**로 Codex MCP를 최적 설정으로 호출합니다. MCP 서버 등록은 필요하지만, 별도 래퍼 서버를 만들거나 복잡한 설정을 할 필요가 없습니다.
+하지만 Codex MCP가 연결되어 있어도, 그냥 호출하면 최적 활용이 어렵습니다. 이 프로젝트는 **커맨드 파일 1개**로 모델 선택, 병렬 분석, 자동 검증, 중복 제거까지 자동화합니다.
 
 ## 다른 프로젝트에 없는 기능
 
-63건 버그를 5-agent 병렬로 분석/수정한 실전 경험에서 만들어진 기능들입니다.
+실제 63건 버그를 병렬 에이전트로 분석/수정한 실전 경험에서 만들어진 기능들입니다.
 
 ### 자동 검증 + 오탐 제거
 
@@ -89,33 +89,24 @@ npm install -g @anthropic-ai/claude-code
 
 설치 후 `claude` 명령으로 실행 확인.
 
-### Step 2: Codex CLI 설치 + 로그인
+### Step 2: ChatGPT 계정 연결 (Codex MCP 활성화)
+
+Claude Code에서 ChatGPT 계정을 연결하면 Codex MCP가 자동으로 추가됩니다.
+
+별도 MCP 서버 설치나 Codex CLI 설치가 필요 없습니다.
+
+<details>
+<summary>수동 설치 (계정 연결이 안 되는 경우)</summary>
+
+ChatGPT 계정 연결 대신 Codex CLI를 직접 설치하는 방법:
 
 ```bash
+# Codex CLI 설치 + 로그인
 npm install -g @openai/codex
 codex login
-```
 
-ChatGPT 계정으로 로그인합니다. ChatGPT Plus 구독이 있으면 API 키 없이 사용 가능합니다.
-
-API 키를 쓰려면 (stdin으로 입력, 셸 히스토리에 남지 않음):
-
-```bash
-echo "your-openai-api-key" | codex login --with-api-key
-```
-
-또는 환경 변수로 설정:
-
-```bash
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-### Step 3: Codex MCP 서버 등록
-
-[codex-mcp-server](https://www.npmjs.com/package/codex-mcp-server)는 커뮤니티 패키지입니다:
-
-```bash
-claude mcp add codex -- npx -y codex-mcp-server
+# Codex MCP 서버 등록 (CLI 내장 MCP 서버 사용)
+claude mcp add codex -- codex mcp-server
 ```
 
 등록 확인:
@@ -124,9 +115,9 @@ claude mcp add codex -- npx -y codex-mcp-server
 claude mcp list
 ```
 
-목록에 `codex`가 보이면 성공입니다.
+</details>
 
-### Step 4: 커맨드 파일 설치
+### Step 3: 커맨드 파일 설치
 
 ```bash
 # 이 레포 클론
@@ -144,7 +135,7 @@ mkdir -p .claude/commands
 cp codex.md .claude/commands/codex.md
 ```
 
-### Step 5: 동작 확인
+### Step 4: 동작 확인
 
 Claude Code에서:
 
