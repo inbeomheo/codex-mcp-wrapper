@@ -72,26 +72,61 @@ npx tsc --noEmit 2>&1 | grep "error TS" | wc -l  # → 35건 이하면 OK
 
 모드를 8개 스킬로 쪼개지 않습니다. Claude가 상황에 맞게 모델, 샌드박스, 병렬 수를 직접 판단합니다.
 
-## 설치
+## 처음부터 세팅하기
 
-### 전역 설치 (권장)
+### Step 1: Claude Code 설치
 
 ```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+설치 후 `claude` 명령으로 실행 확인.
+
+### Step 2: ChatGPT 계정 연결 (Codex MCP 활성화)
+
+Claude Code 실행 후:
+
+```
+/login
+```
+
+또는 Settings에서 ChatGPT 계정을 연결합니다. 연결하면 Codex MCP 서버가 자동으로 추가됩니다.
+
+연결 확인:
+
+```bash
+claude mcp list
+```
+
+목록에 `codex` 또는 `chatgpt` 관련 MCP 서버가 보이면 성공입니다.
+
+### Step 3: 커맨드 파일 설치
+
+```bash
+# 이 레포 클론
+git clone https://github.com/inbeomheo/codex-mcp-wrapper.git
+cd codex-mcp-wrapper
+
+# 전역 설치 (권장 — 모든 프로젝트에서 사용 가능)
 cp codex.md ~/.claude/commands/codex.md
 ```
 
-### 프로젝트별 설치
+프로젝트별로만 쓰려면:
 
 ```bash
 mkdir -p .claude/commands
 cp codex.md .claude/commands/codex.md
 ```
 
-## 사전 요구사항
+### Step 4: 동작 확인
 
-- [Claude Code](https://claude.ai/code) 설치
-- [Codex MCP](https://chatgpt.com/codex) 연결 (ChatGPT 계정 필요)
-- Claude Code에서 Codex MCP 서버가 활성화되어 있어야 함
+Claude Code에서:
+
+```
+/codex 안녕, 연결 테스트야
+```
+
+Codex가 응답하면 세팅 완료입니다.
 
 ## 사용법
 
