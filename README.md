@@ -127,11 +127,10 @@ cp codex.md .claude/commands/codex.md
 `codex.md`에서 기본 설정 변경:
 
 ```yaml
-model: "gpt-5.4-codex"        # 기본 (고성능)
-model: "gpt-5.4-codex-spark"  # 경량 (빠른 응답)
+model: "gpt-5.4"                       # 기본
 
-config: {"reasoningEffort": "high"}   # 기본
-config: {"reasoningEffort": "medium"} # 빠른 분석
+config: {"reasoningEffort": "high"}    # 기본 (고성능)
+config: {"reasoningEffort": "medium"}  # 경량 (빠른 분석)
 
 sandbox: "danger-full-access"  # 기본 (전체 접근)
 sandbox: "workspace-write"     # 쓰기 제한

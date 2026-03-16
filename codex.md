@@ -19,12 +19,12 @@ ELSE:
 ## 기본 설정
 
 ```
-model: "gpt-5.4-codex"
+model: "gpt-5.4"
 config: {"reasoningEffort": "high"}
 sandbox: "danger-full-access"
 ```
 
-경량 작업(단순 질문, 짧은 확인): `model: "gpt-5.4-codex-spark"`
+경량 작업(단순 질문, 짧은 확인): `model: "gpt-5.4"` + `reasoningEffort: "medium"`
 
 ## 3원칙
 
@@ -52,7 +52,7 @@ sandbox: "danger-full-access"
 # 첫 호출
 mcp__codex__codex(
   prompt: "영어로 작성한 프롬프트",
-  model: "gpt-5.4-codex",
+  model: "gpt-5.4",
   config: {"reasoningEffort": "high"},
   approval-policy: "never",
   sandbox: "danger-full-access"
@@ -70,7 +70,7 @@ mcp__codex__codex-reply(
 ```bash
 # 기본 호출
 codex exec \
-  --model "gpt-5.4-codex" \
+  --model "gpt-5.4" \
   --reasoning-effort "high" \
   --approval-policy "never" \
   --sandbox "danger-full-access" \
@@ -78,12 +78,12 @@ codex exec \
 
 # 파일 내용 포함 시 (stdin 파이프)
 cat target_file.py | codex exec \
-  --model "gpt-5.4-codex" \
+  --model "gpt-5.4" \
   "Review this code for bugs. Focus on: error handling, type safety"
 
-# 경량 호출
+# 경량 호출 (같은 모델, reasoningEffort만 낮춤)
 codex exec \
-  --model "gpt-5.4-codex-spark" \
+  --model "gpt-5.4" \
   --reasoning-effort "medium" \
   "Quick question: what does asyncio.gather return?"
 ```
