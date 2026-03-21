@@ -1,137 +1,192 @@
 ---
 name: codex
-description: Codex 하이브리드 래퍼 (MCP + CLI). 버그분석, 코드리뷰, 리팩토링, 구현, 질문 등 다목적 Codex 활용. MCP 연결 시 멀티턴·구조화 파라미터 활용, MCP 미연결 시 CLI 자동 폴백.
+description: "Codex CLI-First 래퍼. 버그분석, 코드리뷰, 리팩토링, 구현, 질문, 병렬 평가 등 다목적 활용. CLI 병렬이 MCP 대비 2~7배 빠름. codex로 분석해줘, codex 리뷰해줘, codex 병렬로 돌려줘 등의 요청에 사용."
 ---
 
-# Codex Hybrid Wrapper
+# Codex CLI-First Wrapper
+
+## 핵심: CLI 우선, MCP는 선택
+
+벤치마크 결과 CLI가 거의 모든 시나리오에서 MCP보다 우월하다.
+
+| 시나리오 | CLI 병렬 | MCP 직렬 | 배율 |
+|---------|---------|---------|------|
+| 평가 3개 동시 | 14초 | ~30초 | **2x** |
+| 경량 호출 5개 | 6초 | ~35초 | **6x** |
+| 경량 호출 10개 | 10초 | ~70초 | **7x** |
+| 멀티턴 대화 | `exec resume` | `codex-reply` | **동등** |
+| 파일 읽기/쓰기 | ✅ 직접 | ❌ 불가 | **CLI only** |
+| diff 적용 | `codex apply` | ❌ 불가 | **CLI only** |
 
 ## 모드 감지 (매 호출 시 자동 판별)
 
 ```
-IF mcp__codex__codex 도구가 사용 가능:
-  → MCP 모드 (멀티턴, 구조화 파라미터, base-instructions 지원)
-ELSE IF `command -v codex` 성공:
-  → CLI 모드 (단발성, Bash 실행, stdout 파싱)
+IF `command -v codex` 성공:
+  → CLI 모드 (기본 — 병렬, 파일 접근, 멀티턴 모두 지원)
+ELSE IF mcp__codex__codex 도구가 사용 가능:
+  → MCP 모드 (폴백 — base-instructions 등 구조화 파라미터 필요 시)
 ELSE:
   → "Codex가 설치되어 있지 않습니다" 안내 후 중단
 ```
 
 ## 기본 설정
 
+`~/.codex/config.toml`에서 자동 적용:
 ```
 model: "gpt-5.4"
-config: {"reasoningEffort": "high"}
+reasoning_effort: "high"
 sandbox: "danger-full-access"
 ```
 
-경량 작업(단순 질문, 짧은 확인): `model: "gpt-5.4"` + `reasoningEffort: "medium"`
-
 ## 3원칙
 
-1. **Claude는 지휘, Codex는 실행.** Claude가 무엇을 할지 판단하고, Codex가 실제 코드를 읽고/쓰고/실행한다. Claude 컨텍스트에 코드를 넣지 말고 Codex에게 직접 다루게 하라.
-2. **병렬은 Codex 내부에서.** MCP 모드: `mcp__codex__codex`를 여러 개 동시 호출해도 MCP가 직렬 처리한다. CLI 모드: 여러 `codex exec` 호출도 순차 실행된다. 병렬이 필요하면 Codex에게 셸 병렬(`& + wait`)이나 내장 멀티에이전트를 쓰라고 지시하라.
-3. **Codex 능력을 최대한 활용하라.** Codex는 단순 코드 생성기가 아니다. 아래 능력 목록을 보고 위임할 수 있는 건 위임하라.
+1. **Claude는 지휘, Codex는 실행.** Claude가 판단, Codex가 코드를 읽고/쓰고/실행.
+2. **병렬은 CLI `& + wait`로.** MCP는 직렬 큐. CLI는 진짜 OS-level 병렬. N개 동시 실행 = 1개 시간.
+3. **용도에 맞는 서브커맨드.** `exec`(범용), `review`(리뷰), `exec resume`(멀티턴), `apply`(diff 적용).
 
 ## Codex 능력
 
-| 능력 | 설명 | 활용 예 |
-|------|------|---------|
-| 파일 읽기/쓰기 | cwd 기준 전체 파일 접근 | 코드 분석, 수정, 생성 |
-| 셸 실행 | 모든 셸 명령 (sandbox 범위 내) | 빌드, 테스트, lint |
-| **셸 병렬** | `& + wait`로 동시 실행 (5파일 2.3x, 20파일 2.8x) | 다수 파일 분석/검증 |
-| 웹 검색 | 실시간 웹 검색 내장 | 최신 API 문서, 라이브러리 사용법 |
-| 멀티턴 대화 | MCP 전용: `codex-reply` + threadId | 후속 질문, 점진적 수정 |
-| `base-instructions` | MCP 전용: 기본 지시 오버라이드 | 프로젝트별 규칙 주입 |
-| `developer-instructions` | MCP 전용: 개발자 역할 메시지 주입 | 프레임워크/컨벤션 주입 |
+| 능력 | CLI | MCP | 활용 예 |
+|------|-----|-----|---------|
+| 파일 읽기/쓰기 | ✅ | ❌ | 코드 분석, 수정, 생성 |
+| 셸 실행 | ✅ | ✅ (내부) | 빌드, 테스트, lint |
+| **외부 병렬** | ✅ `& + wait` | ❌ 직렬 큐 | N개 파일 동시 분석 |
+| 내부 병렬 | ✅ 셸 병렬 | ✅ 셸 병렬 | Codex 안에서 `& + wait` |
+| 웹 검색 | ✅ | ✅ | 최신 API 문서 |
+| 멀티턴 대화 | ✅ `exec resume` | ✅ `codex-reply` | 후속 질문, 점진적 수정 |
+| `base-instructions` | ⚠️ config.toml | ✅ 파라미터 | 프로젝트별 규칙 주입 |
+| diff 적용 | ✅ `codex apply` | ❌ | 마지막 수정사항 적용 |
+| 코드 리뷰 | ✅ `codex review` | ❌ | 전용 리뷰 서브커맨드 |
 
-## 모드별 호출 패턴
+---
 
-### MCP 모드
+## CLI 호출 패턴
 
-```
-# 첫 호출
-mcp__codex__codex(
-  prompt: "영어로 작성한 프롬프트",
-  model: "gpt-5.4",
-  config: {"reasoningEffort": "high"},
-  approval-policy: "never",
-  sandbox: "danger-full-access"
-)
-
-# 이어서 (멀티턴)
-mcp__codex__codex-reply(
-  thread_id: "이전 응답의 threadId",
-  prompt: "후속 질문 또는 추가 지시"
-)
-```
-
-### CLI 모드
+### 1. 단일 작업
 
 ```bash
-# 기본 호출
-codex exec \
-  --model "gpt-5.4" \
-  --reasoning-effort "high" \
-  --approval-policy "never" \
-  --sandbox "danger-full-access" \
-  "영어로 작성한 프롬프트"
-
-# 파일 내용 포함 시 (stdin 파이프)
-cat target_file.py | codex exec \
-  --model "gpt-5.4" \
-  "Review this code for bugs. Focus on: error handling, type safety"
-
-# 경량 호출 (같은 모델, reasoningEffort만 낮춤)
-codex exec \
-  --model "gpt-5.4" \
-  --reasoning-effort "medium" \
-  "Quick question: what does asyncio.gather return?"
+codex exec -o /tmp/result.txt "프롬프트 내용"
 ```
 
-> **CLI 모드 제약:** 멀티턴 불가. 매 호출이 새 세션. 컨텍스트를 이어가려면 이전 결과를 프롬프트에 직접 포함해야 한다.
+주요 옵션:
+- `-o <파일>`: 출력을 파일로 저장 (파싱 용이)
+- `-s read-only`: 읽기 전용 sandbox
+- `-m <모델>`: 모델 지정
+- `-c 'model_reasoning_effort="xhigh"'`: 추론 강도 오버라이드
+
+### 2. 병렬 실행 (핵심 패턴)
+
+```bash
+codex exec -o /tmp/r1.txt "파일 A 분석" &
+codex exec -o /tmp/r2.txt "파일 B 분석" &
+codex exec -o /tmp/r3.txt "파일 C 분석" &
+wait
+# 결과 수집
+for f in /tmp/r{1,2,3}.txt; do cat "$f"; done
+```
+
+대규모 병렬 (autoresearch, 다중 평가 등):
+```bash
+for i in $(seq 1 10); do
+  codex exec -o "/tmp/eval_${i}.txt" "Evaluate prompt ${i}" &
+done
+wait
+```
+
+### 3. 코드 리뷰
+
+```bash
+codex review --base main
+# 커스텀 지시 추가:
+codex review "보안 중심으로" --base main
+```
+
+### 4. 멀티턴 대화
+
+```bash
+# 첫 호출 — 세션 ID가 출력에 포함됨
+codex exec "이 프로젝트의 아키텍처를 분석해줘"
+# → session id: 019d1158-28d8-...
+
+# 이어서 질문
+codex exec resume 019d1158-28d8-... "그럼 성능 병목은 어디야?"
+
+# 가장 최근 세션 이어받기
+codex exec resume --last "추가 질문"
+```
+
+### 5. diff 적용
+
+```bash
+codex apply  # 마지막 Codex 수정사항을 git apply
+```
+
+### 6. Challenge (Adversarial)
+
+```bash
+codex exec -s read-only \
+  -c 'model_reasoning_effort="xhigh"' \
+  "Review git diff origin/main. Find ways this code will fail in production.
+   Edge cases, race conditions, security holes. Be adversarial."
+```
+
+---
+
+## MCP 모드 (폴백/특수 용도)
+
+CLI가 없거나, `base-instructions` 파라미터가 필요한 경우에만 사용:
+
+```
+mcp__codex__codex(
+  prompt: "프롬프트",
+  base-instructions: "프로젝트 규칙...",
+  model: "gpt-5.4",
+  config: {"reasoningEffort": "high"},
+  sandbox: "danger-full-access"
+)
+```
+
+**주의:** MCP는 직렬 큐. 여러 호출이 동시에 들어와도 순차 처리됨.
+
+---
 
 ## 프롬프트 규칙
 
-- **Codex 프롬프트는 영어로** (토큰 ~30% 절약, 정확도 향상)
+- **Codex 프롬프트는 영어로** (토큰 ~30% 절약)
 - **사용자 응답은 한국어로 정리**
-- **프로젝트 구조는 Codex가 직접 파악하게 하라** — 특정 프로젝트 구조를 가정하지 말 것
-- **검증 명령은 프로젝트 CLAUDE.md 참고** — 프로젝트마다 다르므로 하드코딩 금지
-- **CLI 모드에서 긴 프롬프트:** 임시 파일에 쓰고 `codex exec < prompt.txt` 패턴 사용. 셸 이스케이핑 지옥을 피하라.
+- **파일 범위 명시** — 수정 대상 파일 목록을 제한
+- **"Read the file first"** — 수정 전 파일 읽기 지시 포함
+- **긴 프롬프트:** heredoc 또는 임시 파일 사용
 
-## 지뢰밭 (실전에서 데인 것들)
+```bash
+codex exec -o /tmp/out.txt "$(cat <<'EOF'
+여기에 긴 프롬프트...
+여러 줄도 가능...
+EOF
+)"
+```
 
-### 공통 (MCP + CLI)
+## reasoning_effort 가이드
+
+| 용도 | 설정 | 이유 |
+|------|------|------|
+| 코드 리뷰 | `high` | 깊이 있되 빠르게 |
+| Adversarial challenge | `xhigh` | 최대 추론력 |
+| 일반 질문/분석 | `high` | 균형 |
+| 반복 평가 (autoresearch) | `high` | 비용/속도 고려 |
+| 경량 확인 | `medium` | 빠른 응답 |
+
+---
+
+## 지뢰밭
 
 | 함정 | 증상 | 대응 |
 |------|------|------|
-| 파일 범위 미지정 | Codex가 요청 안 한 파일까지 건드림 | 수정 대상 파일 목록 명시적 제한 |
-| 한글 파일 수정 | 인코딩 깨짐 가능 | 수정 후 반드시 내용 검증 |
+| 파일 범위 미지정 | 엉뚱한 파일까지 수정 | 수정 대상 파일 목록 명시 |
+| 한글 파일 수정 | 인코딩 깨짐 | 수정 후 내용 검증 |
 | 같은 파일 병렬 수정 | 충돌/덮어쓰기 | 파일 소유권 배타적 배분 |
-| Codex 결과 맹신 | 오탐, 라인 번호 틀림 | Critical/High는 Read로 교차 검증 |
-| 수정 전 파일 안 읽음 | 컨텍스트 없이 추측 수정 | "Read the file first" 프롬프트에 포함 |
-| 에러 절대 수치로 판단 | 기존 에러를 신규로 오판 | 수정 전 베이스라인 잡고 델타로 판단 |
-
-### MCP 전용
-
-| 함정 | 증상 | 대응 |
-|------|------|------|
-| fix 후 threadId 재사용 | stale 컨텍스트로 엉뚱한 수정 | 코드 변경 후엔 항상 새 thread |
-
-### CLI 전용
-
-| 함정 | 증상 | 대응 |
-|------|------|------|
-| 셸 특수문자 이스케이핑 | 프롬프트에 `$`, `` ` ``, `"` 등이 있으면 깨짐 | 임시 파일 + stdin 리다이렉트 |
-| 긴 stdout 잘림 | 출력이 너무 길면 Claude 컨텍스트 소모 | `--max-tokens` 제한 또는 출력을 파일로 리다이렉트 후 핵심만 추출 |
-| exit code만 보고 판단 | exit 0이어도 내용이 엉뚱할 수 있음 | stdout 내용까지 반드시 확인 |
-| 프로세스 hang | Codex가 응답 안 하면 Bash가 영원히 대기 | `timeout 180 codex exec ...` 감싸기 |
-
-## 모드 선택 가이드
-
-| 상황 | 추천 모드 | 이유 |
-|------|-----------|------|
-| 점진적 수정 (fix → 확인 → 추가 fix) | MCP | 멀티턴으로 컨텍스트 유지 |
-| 프로젝트 규칙 주입 필요 | MCP | `base-instructions` 파라미터 |
-| 단발성 코드 리뷰 | 둘 다 OK | 한 번 호출로 끝 |
-| 대규모 병렬 분석 | CLI | timeout/kill 제어, 파이프 조합 |
-| MCP 서버 연결 불안정 | CLI | 폴백으로 동작 보장 |
+| Codex 결과 맹신 | 오탐, 틀린 라인 | Critical은 Read로 교차 검증 |
+| 셸 특수문자 | `$`, `` ` `` 포함 프롬프트 깨짐 | heredoc 또는 임시 파일 |
+| 프로세스 hang | 무한 대기 | `timeout 180 codex exec ...` |
+| resume 실패 | 세션 만료/삭제 | 새 세션으로 시작 |
+| MCP 직렬 큐 | N개 호출이 N배 시간 | CLI `& + wait` 병렬 사용 |
